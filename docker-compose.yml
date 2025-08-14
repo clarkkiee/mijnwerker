@@ -1,0 +1,45 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - scraping_network
+
+  python_scraper:
+    build:
+      context: .
+      dockerfile: ./Dockerfile.python
+    container_name: python_scraper
+    depends_on:
+      - rabbitmq
+    volumes:
+      - ./scrapers:/app/scrapers
+      - ./main.py:/app/main.py
+      - ./requirements.txt:/app/requirements.txt
+      - ./chromedriver.exe:/usr/local/bin/chromedriver.exe
+    networks:
+      - scraping_network
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+
+  go_processor:
+    build:
+      context: .
+      dockerfile: ./Dockerfile.go
+    container_name: go_processor
+    depends_on:
+      - rabbitmq
+    volumes:
+      - ./processors:/app/processors
+    networks:
+      - scraping_network
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+    command: ["/app/processors/main"]
+
+networks:
+  scraping_network:
+    driver: bridge

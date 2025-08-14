@@ -1,0 +1,15 @@
+FROM python:3.9-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY chromedriver.exe /usr/local/bin/chromedriver.exe
+RUN chmod +x /usr/local/bin/chromedriver.exe
+
+COPY scrapers /app/scrapers
+COPY main.py /app/main.py
+
+CMD [ "python", "main.py" ]
