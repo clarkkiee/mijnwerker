@@ -12,7 +12,12 @@ import (
 
 func main() {
 
-	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	rabbitmqHost := os.Getenv("RABBITMQ_HOST")
+	if rabbitmqHost == "" {
+		rabbitmqHost = "localhost"
+	}
+
+	conn, err := amqp.Dial("amqp://guest:guest@" + rabbitmqHost + ":5672/")
 	if err != nil {
 		log.Fatalf("Failed to connect to RabbitMQ: %s", err)
 	}

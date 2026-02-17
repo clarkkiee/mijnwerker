@@ -5,6 +5,12 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+    healthcheck:
+      test: rabbitmq-diagnostics -q check_port_connectivity
+      interval: 5s
+      timeout: 10s
+      retries: 10
+      start_period: 15s
     networks:
       - scraping_network
 
@@ -14,16 +20,19 @@ services:
       dockerfile: ./Dockerfile.python
     container_name: python_scraper
     depends_on:
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
     volumes:
       - ./scrapers:/app/scrapers
       - ./main.py:/app/main.py
       - ./requirements.txt:/app/requirements.txt
-      - ./chromedriver.exe:/usr/local/bin/chromedriver.exe
+      - ./jobs:/app/jobs
     networks:
       - scraping_network
+    restart: on-failure
     environment:
       - RABBITMQ_HOST=rabbitmq
+      - PYTHONUNBUFFERED=1
 
   go_processor:
     build:
@@ -31,9 +40,8 @@ services:
       dockerfile: ./Dockerfile.go
     container_name: go_processor
     depends_on:
-      - rabbitmq
-    volumes:
-      - ./processors:/app/processors
+      rabbitmq:
+        condition: service_healthy
     networks:
       - scraping_network
     environment:

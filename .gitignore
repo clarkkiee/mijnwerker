@@ -4,3 +4,4 @@
 .venv
 
 jobs/
+*.pyc

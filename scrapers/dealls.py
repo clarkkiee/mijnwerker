@@ -6,7 +6,6 @@ import datetime
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service
 from selenium.common.exceptions import NoSuchElementException
 
 from pika.channel import Channel
@@ -24,8 +23,16 @@ def get_html(url):
         return None
 
 def get_full_html_with_selenium(url):
-    service = Service(executable_path="/usr/local/bin/chromedriver.exe")
-    driver = webdriver.Chrome(service=service)
+    options = webdriver.ChromeOptions()
+    options.add_argument("--headless=new")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--window-size=1920,1080")
+    options.add_argument(
+        "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+    )
+    driver = webdriver.Chrome(options=options)
 
     try:
         driver.get(url)
@@ -59,12 +66,19 @@ def scrape_jobs_list(list_url):
         print("Could not retrieve HTML content. Exiting.")
         return
 
+    # Save raw HTML for debugging
+    with open('./jobs/debug_page.html', 'w', encoding='utf-8') as f:
+        f.write(html_content)
+    print(f"HTML length: {len(html_content)} chars, saved to ./jobs/debug_page.html")
+
     soup = BeautifulSoup(html_content, 'html.parser')
     container = soup.find('div', class_ = 'recommended-jobs')
+    print(f"Container found: {container is not None}")
 
     if container:
 
         job_cards = container.find_all('a', class_ = 'rounded-lg')
+        print(f"Job cards found: {len(job_cards)}")
 
         for job_card in job_cards:
 
@@ -101,11 +115,13 @@ def scrape_jobs_list(list_url):
                 "descriptions": job_details["descriptions"],
                 "requirements": job_details["requirements"]
             }
-            
+
             scraped_data.append(job_data)
     
-    with open(f'./jobs/result_{time.strftime("%Y-%m-%d")}.json', 'w') as f:
-        json.dump(scraped_data, f, indent=4)    
+    with open(f'./jobs/se_result_{time.strftime("%Y-%m-%d")}.json', 'w') as f:
+        json.dump(scraped_data, f, indent=4)
+
+    return scraped_data
             
 
 def scrape_job_details(job_url):

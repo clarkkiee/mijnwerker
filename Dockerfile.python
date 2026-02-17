@@ -2,12 +2,17 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
+# Install Chromium and chromedriver for Linux
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    chromium \
+    chromium-driver \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY chromedriver.exe /usr/local/bin/chromedriver.exe
-RUN chmod +x /usr/local/bin/chromedriver.exe
+RUN mkdir -p /app/jobs
 
 COPY scrapers /app/scrapers
 COPY main.py /app/main.py
